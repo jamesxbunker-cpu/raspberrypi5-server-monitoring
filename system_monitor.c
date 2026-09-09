@@ -156,7 +156,7 @@ double get_cpu_usage()
     if (!fp)
         return -1.0;
 
-    if (fscanf(fp, "cpu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
+    if (fscanf(fp, "cpu %lu  %lu  %lu  %lu  %lu  %lu  %lu  %lu  %lu  %lu",
                &user, &nice, &system, &idle, &iowait, &irq, &softirq, &steal, &guest, &guest_nice) != 10)
     {
         fclose(fp);
@@ -312,7 +312,7 @@ void get_network_stats(unsigned long *rx, unsigned long *tx)
 // Get GPU temp (if available)
 double get_gpu_temp()
 {
-    char *temp_str = read_file_string("/sys/class/thermal/thermal_zone1/temp");
+    char *temp_str = read_file_string("/sys/class/thermal/thermal_zone0/temp");
     if (!temp_str)
         return -1.0;
 
