@@ -148,7 +148,6 @@ double get_cpu_freq()
 // Get CPU usage percentage
 double get_cpu_usage(unsigned long* prev_idle, unsigned long* prev_total)
 {
-    static unsigned long prev_idle = 0, prev_total = 0;
     unsigned long user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice;
     unsigned long total;
 
