@@ -146,7 +146,7 @@ double get_cpu_freq()
 }
 
 // Get CPU usage percentage
-double get_cpu_usage()
+double get_cpu_usage(unsigned long* prev_idle, unsigned long* prev_total)
 {
     static unsigned long prev_idle = 0, prev_total = 0;
     unsigned long user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice;
@@ -166,19 +166,19 @@ double get_cpu_usage()
 
     total = user + nice + system + idle + iowait + irq + softirq + steal + guest + guest_nice;
 
-    if (prev_total == 0)
+    if (*prev_total == 0)
     {
-        prev_idle = idle;
-        prev_total = total;
+        *prev_idle = idle;
+        *prev_total = total;
         return 0.0;
     }
 
-    unsigned long diff_idle = idle - prev_idle;
-    unsigned long diff_total = total - prev_total;
+    unsigned long diff_idle = idle - *prev_idle;
+    unsigned long diff_total = total - *prev_total;
     double cpu_usage = 100.0 * (1.0 - (double)diff_idle / diff_total);
 
-    prev_idle = idle;
-    prev_total = total;
+    *prev_idle = idle;
+    *prev_total = total;
 
     return cpu_usage;
 }
@@ -239,6 +239,16 @@ void get_disk_usage(const char *path, unsigned long *total, unsigned long *used,
     *used = *total - *free;
 }
 
+// Helper to check if a directory name is a valid PID (all numbers)
+int is_pid_dir(const char *name) {
+    if (*name == '\0') return 0;
+    while (*name) {
+        if (!isdigit((unsigned char)*name)) return 0;
+        name++;
+    }
+    return 1;
+}
+
 // Get process counts
 void get_process_counts(int *total, int *running)
 {
@@ -252,12 +262,10 @@ void get_process_counts(int *total, int *running)
 
     while ((entry = readdir(dir)) != NULL)
     {
-        if (stat(entry->d_name, &statbuf) == 0)
+        if (is_pid_dir(entry->d_name))
         {
-            if (S_ISDIR(statbuf.st_mode))
-            {
                 (*total)++;
-                char path[256];
+                char path[512];
                 snprintf(path, sizeof(path), "/proc/%s/stat", entry->d_name);
                 FILE *fp = fopen(path, "r");
                 if (fp)
@@ -265,12 +273,12 @@ void get_process_counts(int *total, int *running)
                     char state;
                     if (fscanf(fp, "%*d %*s %c", &state) == 1)
                     {
-                        if (state == 'R')
+                        if (state == 'R'){
                             (*running)++;
+                        }
                     }
                     fclose(fp);
                 }
-            }
         }
     }
     closedir(dir);
@@ -362,7 +370,10 @@ SystemMetrics collect_metrics()
     metrics.timestamp = time(NULL);
 
     // CPU
-    metrics.cpu_usage = get_cpu_usage();
+    unsigned long cpu_usage_idle = 0, cpu_usage_total = 0;
+    get_cpu_usage(&cpu_usage_idle, &cpu_usage_total);
+    sleep(1); // Wait a second to get a proper CPU usage reading
+    metrics.cpu_usage = get_cpu_usage(&cpu_usage_idle, &cpu_usage_total);
     metrics.cpu_temp = get_cpu_temp();
     metrics.cpu_freq_mhz = get_cpu_freq();
     metrics.cpu_cores = sysconf(_SC_NPROCESSORS_ONLN);
