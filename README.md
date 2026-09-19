@@ -23,9 +23,12 @@ This project reads local system metrics on a Raspberry Pi 5 to track server stat
 
 ## Metrics Collected
 
-- **CPU usage** — read from `/proc/stat`, computed as a delta between samples
-
-> More metrics planned — see the roadmap below.
+- **CPU Usage** 
+- **Memory Usage**
+- **Storage Usage**
+- **Core Temperature**
+- **Fan Speed**
+- **System Uptime**
 
 ## Getting Started
 
